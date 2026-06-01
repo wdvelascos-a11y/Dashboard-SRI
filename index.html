@@ -376,9 +376,15 @@ function parseSRI(xmlText, fileName) {
       rsComprador: txt(inner, 'razonSocialComprador'),
       totalSinImpuestos: num(inner, 'totalSinImpuestos'),
       descuento: num(inner, 'totalDescuento'),
+      descAdicional: num(inner, 'totalDescuentoAdicional'),
+      propina: num(inner, 'propina'),
+      retIVApres: numSafe(inner, 'valorRetIva'),
+      retRentapres: numSafe(inner, 'valorRetRenta'),
+      guiaRemision: txt(inner, 'guiaRemision'),
       importeTotal: num(inner, 'importeTotal'),
       base0:0, base5:0, base8:0, base12:0, base13:0, base14:0, base15:0,
-      noObjeto:0, exento:0, montoIVA:0,
+      noObjeto:0, exento:0, devolIVA:0, montoIVA:0,
+      baseICE:0, montoICE:0, baseIRBPNR:0, montoIRBPNR:0,
       formaPago: '', articulos: '', retenciones: []
     };
     result.secFmt = `${result.estab}-${result.ptoEmi}-${result.secuencial}`;
@@ -403,7 +409,8 @@ function parseSRI(xmlText, fileName) {
         else if (cp === '7') result.noObjeto += base;
         else if (cp === '8') { result.base8 += base; result.montoIVA += valor; }
         else if (cp === '10') { result.base13 += base; result.montoIVA += valor; }
-      }
+      } else if (cod === '3') { result.baseICE += base; result.montoICE += valor; }
+      else if (cod === '5') { result.baseIRBPNR += base; result.montoIRBPNR += valor; }
     }
 
     const descs = Array.from(inner.querySelectorAll('detalle descripcion, detalles descripcion')).slice(0, 3).map(d => (d.textContent || '').trim());
@@ -451,6 +458,12 @@ function num(node, tag) {
   const v = parseFloat(txt(node, tag));
   return isNaN(v) ? 0 : v;
 }
+function numSafe(node, tag) {
+  const s = txt(node, tag);
+  if (!s) return 0;
+  const v = parseFloat(s);
+  return isNaN(v) ? 0 : v;
+}
 
 function passesFilter(d, ruc, year, month) {
   if (d.fechaEmision) {
@@ -476,6 +489,7 @@ function passesFilter(d, ruc, year, month) {
 
 // ============ RENDER ============
 function fmt(v) { return (v || 0).toLocaleString('es-EC', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
+function f2(v) { return (v == null || isNaN(v)) ? '0.00' : Number(v).toFixed(2); }
 function sumField(arr, field) { return arr.reduce((s, d) => s + (d[field] || 0), 0); }
 
 function render() {
@@ -701,14 +715,23 @@ function renderGrid(dataset, tabKey) {
         ]);
       }
     }
+  } else if (tabKey === 'compras' || tabKey === 'ventas') {
+    cols = ['Numero','CodDoc','Fecha','RUC Emisor','Razón Social Emisor','Nro.Secuencial','TipoId.','Id.Comprador','Razón Social Comprador','Formas de Pago','Descuento','Total Sin Imp.','B.IVA 0%','B.IVA 5%','B.IVA 8%','B.IVA 12%','B.IVA 13%','B.IVA 14%','B.IVA 15%','No Obj. IVA','Exento IVA','Desc. Adic.','Devol. IVA','Monto IVA','Base ICE','Monto ICE','Base IRBPNR','Monto IRBPNR','Propina','Ret. IVA Pres.','Ret. Renta Pres.','Monto Total','Guia Remisión','Primeros 3 Artículos','Nro de Autorización'];
+    rows = dataset.map((d, i) => [
+      i+1, d.codDoc, d.fechaEmision, d.ruc, d.razonSocial, d.secFmt,
+      d.tipoIdComprador, d.idComprador, d.rsComprador, d.formaPago,
+      f2(d.descuento), f2(d.totalSinImpuestos),
+      f2(d.base0), f2(d.base5), f2(d.base8), f2(d.base12), f2(d.base13), f2(d.base14), f2(d.base15),
+      f2(d.noObjeto), f2(d.exento), f2(d.descAdicional), f2(d.devolIVA), f2(d.montoIVA),
+      f2(d.baseICE), f2(d.montoICE), f2(d.baseIRBPNR), f2(d.montoIRBPNR),
+      f2(d.propina), f2(d.retIVApres), f2(d.retRentapres),
+      f2(d.importeTotal), d.guiaRemision, d.articulos, d.numAutorizacion
+    ]);
   } else {
     cols = ['N°','Fecha','Tipo','RUC/CI','Razón Social','Secuencial','Total Sin Imp.','Base 0%','Base 15%','IVA','Importe Total'];
     rows = dataset.map((d, i) => [
-      i+1, d.fechaEmision, d.codDoc,
-      tabKey === 'ventas' ? (d.idComprador || '-') : (d.ruc || '-'),
-      tabKey === 'ventas' ? (d.rsComprador || '-') : (d.razonSocial || '-'),
-      d.secFmt,
-      d.totalSinImpuestos.toFixed(2), d.base0.toFixed(2), d.base15.toFixed(2), d.montoIVA.toFixed(2), d.importeTotal.toFixed(2),
+      i+1, d.fechaEmision, d.codDoc, d.ruc, d.razonSocial, d.secFmt,
+      f2(d.totalSinImpuestos), f2(d.base0), f2(d.base15), f2(d.montoIVA), f2(d.importeTotal)
     ]);
   }
   new gridjs.Grid({
@@ -745,10 +768,16 @@ function downloadCSV(tab, filename) {
       }
     }
   } else {
-    cols = ['N','CodDoc','Fecha','RUC','RazonSocial','Secuencial','TipoIdComp','IdComprador','RSComprador','FormaPago','Descuento','TotalSinImp','Base0','Base5','Base8','Base12','Base13','Base14','Base15','NoObjeto','Exento','MontoIVA','ImporteTotal','Articulos','NumAutorizacion'];
+    cols = ['Numero','CodDoc','Fecha','RUC Emisor','Razon Social Emisor','Nro.Secuencial','TipoId.','Id.Comprador','Razon Social Comprador','Formas de Pago','Descuento','Total Sin Impuestos','Base IVA 0%','Base IVA 5%','Base IVA 8%','Base IVA 12%','Base IVA 13%','Base IVA 14%','Base IVA 15%','No Objeto IVA','Exento IVA','Desc. Adicional','Devol. IVA','Monto IVA','Base ICE','Monto ICE','Base IRBPNR','Monto IRBPNR','Propina','Ret. IVA Pres.','Ret. Renta Pres.','Monto Total','Guia de Remision','Primeros 3 Articulos','Nro de Autorizacion'];
     rows = dataset.map((d,i) => [
-      i+1, d.codDoc, d.fechaEmision, d.ruc, d.razonSocial, d.secFmt, d.tipoIdComprador, d.idComprador, d.rsComprador, d.formaPago, d.descuento,
-      d.totalSinImpuestos, d.base0, d.base5, d.base8, d.base12, d.base13, d.base14, d.base15, d.noObjeto, d.exento, d.montoIVA, d.importeTotal, d.articulos, d.numAutorizacion
+      i+1, d.codDoc, d.fechaEmision, d.ruc, d.razonSocial, d.secFmt,
+      d.tipoIdComprador, d.idComprador, d.rsComprador, d.formaPago,
+      d.descuento, d.totalSinImpuestos,
+      d.base0, d.base5, d.base8, d.base12, d.base13, d.base14, d.base15,
+      d.noObjeto, d.exento, d.descAdicional, d.devolIVA, d.montoIVA,
+      d.baseICE, d.montoICE, d.baseIRBPNR, d.montoIRBPNR,
+      d.propina, d.retIVApres, d.retRentapres,
+      d.importeTotal, d.guiaRemision, d.articulos, d.numAutorizacion
     ]);
   }
   const csv = [cols, ...rows].map(r => r.map(c => {
