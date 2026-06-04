@@ -144,6 +144,10 @@ footer a { color: var(--navy); text-decoration: none; }
         <div class="chart-wrap"><canvas id="chIva"></canvas></div>
       </div>
       <div class="chart-card">
+        <h3>Bases IVA — Ventas</h3>
+        <div class="chart-wrap"><canvas id="chIvaV"></canvas></div>
+      </div>
+      <div class="chart-card">
         <h3>Importe diario del periodo</h3>
         <div class="chart-wrap"><canvas id="chTrend"></canvas></div>
       </div>
@@ -335,11 +339,13 @@ function parseSRI(xmlText, fileName) {
     const parser = new DOMParser();
     let doc = parser.parseFromString(xmlText, 'text/xml');
     let inner = null, numAut = '', fechaAut = '';
-    const autz = doc.querySelector('autorizacion');
+    const autzList = doc.getElementsByTagName('autorizacion');
+    const autz = autzList && autzList.length ? autzList[0] : null;
     if (autz) {
       numAut = txt(autz, 'numeroAutorizacion');
       fechaAut = txt(autz, 'fechaAutorizacion');
-      const compNode = autz.querySelector('comprobante');
+      const compList = autz.getElementsByTagName('comprobante');
+      const compNode = compList && compList.length ? compList[0] : null;
       if (compNode && compNode.textContent) {
         let compText = compNode.textContent
           .replace(/<ds:Signature[\s\S]*?<\/ds:Signature>/g, '')
@@ -355,10 +361,15 @@ function parseSRI(xmlText, fileName) {
     } else {
       inner = doc.documentElement;
     }
-    if (!inner || inner.nodeName === 'parsererror') return null;
-
-    const docType = inner.nodeName;
-    if (!DATA[docType]) return null;
+    if (!inner || inner.nodeName === 'parsererror' || (inner.getElementsByTagName && inner.getElementsByTagName('parsererror').length)) {
+      console.warn('[SRI] Parse fail:', fileName);
+      return null;
+    }
+    const docType = inner.localName || inner.nodeName;
+    if (!DATA[docType]) {
+      console.warn('[SRI] Unknown docType:', docType, 'in', fileName);
+      return null;
+    }
 
     const result = {
       docType, fileName,
@@ -389,11 +400,12 @@ function parseSRI(xmlText, fileName) {
     };
     result.secFmt = `${result.estab}-${result.ptoEmi}-${result.secuencial}`;
 
-    const pagos = Array.from(inner.querySelectorAll('formaPago')).map(p => (p.textContent || '').trim()).filter(Boolean);
+    const pagos = findAll(inner, 'formaPago').map(p => (p.textContent || '').trim()).filter(Boolean);
     result.formaPago = Array.from(new Set(pagos)).join(', ');
 
-    const tot = inner.querySelector('totalConImpuestos');
-    const impuestos = tot ? Array.from(tot.querySelectorAll('totalImpuesto')) : Array.from(inner.querySelectorAll('totalImpuesto'));
+    const totList = findAll(inner, 'totalConImpuestos');
+    const tot = totList && totList.length ? totList[0] : null;
+    const impuestos = tot ? findAll(tot, 'totalImpuesto') : findAll(inner, 'totalImpuesto');
     for (const ti of impuestos) {
       const cod = txt(ti, 'codigo');
       const cp = txt(ti, 'codigoPorcentaje');
@@ -413,7 +425,7 @@ function parseSRI(xmlText, fileName) {
       else if (cod === '5') { result.baseIRBPNR += base; result.montoIRBPNR += valor; }
     }
 
-    const descs = Array.from(inner.querySelectorAll('detalle descripcion, detalles descripcion')).slice(0, 3).map(d => (d.textContent || '').trim());
+    const descs = findAll(inner, 'descripcion').slice(0, 3).map(d => (d.textContent || '').trim());
     result.articulos = descs.filter(Boolean).join(' | ');
 
     if (docType === 'comprobanteRetencion') {
@@ -421,7 +433,7 @@ function parseSRI(xmlText, fileName) {
       result.tipoIdSujRet = txt(inner, 'tipoIdentificacionSujetoRetenido');
       result.idSujRetenido = txt(inner, 'identificacionSujetoRetenido');
       result.rsSujRetenido = txt(inner, 'razonSocialSujetoRetenido');
-      const rets = Array.from(inner.querySelectorAll('impuesto'));
+      const rets = findAll(inner, 'impuesto');
       for (const r of rets) {
         result.retenciones.push({
           periodoFiscal: result.periodoFiscal,
@@ -451,8 +463,29 @@ function parseSRI(xmlText, fileName) {
 
 function txt(node, tag) {
   if (!node) return '';
-  const el = node.querySelector(tag);
+  let el = null;
+  if (node.getElementsByTagNameNS) {
+    const els = node.getElementsByTagNameNS('*', tag);
+    if (els && els.length) el = els[0];
+  }
+  if (!el && node.getElementsByTagName) {
+    const els = node.getElementsByTagName(tag);
+    if (els && els.length) el = els[0];
+  }
+  if (!el && node.querySelector) el = node.querySelector(tag);
   return el && el.textContent ? el.textContent.trim() : '';
+}
+function findAll(node, tag) {
+  if (!node) return [];
+  if (node.getElementsByTagNameNS) {
+    const els = node.getElementsByTagNameNS('*', tag);
+    if (els && els.length) return Array.from(els);
+  }
+  if (node.getElementsByTagName) {
+    const els = node.getElementsByTagName(tag);
+    if (els && els.length) return Array.from(els);
+  }
+  return node.querySelectorAll ? Array.from(node.querySelectorAll(tag)) : [];
 }
 function num(node, tag) {
   const v = parseFloat(txt(node, tag));
@@ -504,17 +537,17 @@ function renderKpis() {
   const retRec = DATA.comprobanteRetencion.filter(d => d._role === 'recibido');
   const retEmit = DATA.comprobanteRetencion.filter(d => d._role === 'emitido');
   const totalIvaCompras = sumField(compras, 'montoIVA');
-  const totalImpCompras = sumField(compras, 'importeTotal');
-  const totalImpVentas = sumField(ventas, 'importeTotal');
+  const totalBaseCompras = sumField(compras, 'totalSinImpuestos');
+  const totalBaseVentas = sumField(ventas, 'totalSinImpuestos');
   const totalIvaVentas = sumField(ventas, 'montoIVA');
   const ivaNeto = totalIvaVentas - totalIvaCompras;
   const totalRetRec = retRec.reduce((s, d) => s + d.retenciones.reduce((a, r) => a + r.valorRetenido, 0), 0);
   const totalRetEmit = retEmit.reduce((s, d) => s + d.retenciones.reduce((a, r) => a + r.valorRetenido, 0), 0);
 
   const cards = [
-    { label: 'Compras', value: '$' + fmt(totalImpCompras), sub: `${compras.length} facturas` },
+    { label: 'Compras', value: '$' + fmt(totalBaseCompras), sub: `${compras.length} facturas · sin imp.` },
     { label: 'IVA Crédito Tributario', value: '$' + fmt(totalIvaCompras), sub: 'compras' },
-    { label: 'Ventas', value: '$' + fmt(totalImpVentas), sub: `${ventas.length} facturas` },
+    { label: 'Ventas', value: '$' + fmt(totalBaseVentas), sub: `${ventas.length} facturas · sin imp.` },
     { label: 'IVA Débito Fiscal', value: '$' + fmt(totalIvaVentas), sub: 'ventas' },
     { label: 'IVA Neto', value: (ivaNeto >= 0 ? '$' : '-$') + fmt(Math.abs(ivaNeto)), sub: ivaNeto >= 0 ? 'a pagar' : 'a favor' },
     { label: 'Retenciones Recibidas', value: retRec.length, sub: '$' + fmt(totalRetRec) },
@@ -534,11 +567,18 @@ function renderCharts() {
   CHARTS = {};
   const palette = ['#002060', '#c9a227', '#1e88e5', '#43a047', '#e53935', '#8e24aa', '#fb8c00', '#00897b'];
 
+  const compras = DATA.factura.filter(d => d._role === 'recibido');
+  const ventas = DATA.factura.filter(d => d._role === 'emitido');
+  const retRec = DATA.comprobanteRetencion.filter(d => d._role === 'recibido');
+  const retEmit = DATA.comprobanteRetencion.filter(d => d._role === 'emitido');
+
   const docTypes = {
-    'Facturas': DATA.factura.length,
+    'Facturas Compras': compras.length,
+    'Facturas Ventas': ventas.length,
     'N. Crédito': DATA.notaCredito.length,
     'N. Débito': DATA.notaDebito.length,
-    'Retenciones': DATA.comprobanteRetencion.length,
+    'Retenciones Recibidas': retRec.length,
+    'Retenciones Emitidas': retEmit.length,
     'Liq. Compras': DATA.liquidacionCompra.length,
   };
   const dKeys = Object.keys(docTypes).filter(k => docTypes[k] > 0);
@@ -548,8 +588,7 @@ function renderCharts() {
     options: { plugins: { legend: { position: 'right', labels: { boxWidth: 12, font: { size: 11 } } } }, maintainAspectRatio: false }
   });
 
-  const compras = DATA.factura.filter(d => d._role === 'recibido');
-  const ivaData = {
+  const ivaCompras = {
     'IVA 0%': sumField(compras, 'base0'),
     'IVA 5%': sumField(compras, 'base5'),
     'IVA 8%': sumField(compras, 'base8'),
@@ -558,14 +597,29 @@ function renderCharts() {
     'Exento': sumField(compras, 'exento'),
     'No Objeto': sumField(compras, 'noObjeto'),
   };
-  const iKeys = Object.keys(ivaData).filter(k => ivaData[k] > 0);
+  const ivaCKeys = Object.keys(ivaCompras).filter(k => ivaCompras[k] > 0);
   CHARTS.iva = new Chart(document.getElementById('chIva'), {
     type: 'bar',
-    data: { labels: iKeys, datasets: [{ label: 'Base imponible', data: iKeys.map(k => ivaData[k]), backgroundColor: palette }] },
+    data: { labels: ivaCKeys, datasets: [{ label: 'Base imponible', data: ivaCKeys.map(k => ivaCompras[k]), backgroundColor: palette }] },
     options: { plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { callback: v => '$' + v.toLocaleString('es-EC') } } }, maintainAspectRatio: false }
   });
 
-  const ventas = DATA.factura.filter(d => d._role === 'emitido');
+  const ivaVentas = {
+    'IVA 0%': sumField(ventas, 'base0'),
+    'IVA 5%': sumField(ventas, 'base5'),
+    'IVA 8%': sumField(ventas, 'base8'),
+    'IVA 12%': sumField(ventas, 'base12'),
+    'IVA 15%': sumField(ventas, 'base15'),
+    'Exento': sumField(ventas, 'exento'),
+    'No Objeto': sumField(ventas, 'noObjeto'),
+  };
+  const ivaVKeys = Object.keys(ivaVentas).filter(k => ivaVentas[k] > 0);
+  CHARTS.ivaV = new Chart(document.getElementById('chIvaV'), {
+    type: 'bar',
+    data: { labels: ivaVKeys, datasets: [{ label: 'Base imponible', data: ivaVKeys.map(k => ivaVentas[k]), backgroundColor: palette }] },
+    options: { plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { callback: v => '$' + v.toLocaleString('es-EC') } } }, maintainAspectRatio: false }
+  });
+
   const byDay = {};
   for (const d of DATA.factura) {
     if (!d.fechaEmision) continue;
@@ -752,47 +806,4 @@ function downloadCSV(tab, filename) {
   else if (tab === 'liq') dataset = DATA.liquidacionCompra;
 
   if (tab === 'retRec' || tab === 'retEmit') {
-    cols = ['N','codDoc','Fecha','RUC Emisor','Razon Social Emisor','Nro.Secuencial','TipoIdSujRet','IdSujRetenido','Razon Social Sujeto Retenido','P.Fiscal','CodDocSust','Fecha D.S.','Num.Doc.Sustento','Autorizacion Doc Sust','Tipo','codigo','codigoRetencion','baseImponible','porcentajeRetener','valorRetenido','F.P.Dividendo','ImpRenta','Anio Utilidad','Num.Caj.Banano','Prec.Caj.Banano','Nro Autorizacion'];
-    rows = [];
-    let n = 1;
-    for (const d of dataset) {
-      for (const r of d.retenciones) {
-        rows.push([
-          n++, d.codDoc, d.fechaEmision, d.ruc, d.razonSocial, d.secFmt,
-          r.tipoIdSuj, r.idSuj, r.rsSuj, r.periodoFiscal,
-          r.codDocSust, r.fechaDocSust, r.numDocSust, r.autDocSust,
-          tab === 'retRec' ? 'Recibida' : 'Emitida',
-          r.codigo, r.codigoRet, r.baseImponible, r.porcentaje, r.valorRetenido,
-          r.fpDividendo, r.impRenta, r.anioUtil, r.numCajBan, r.precCajBan, d.numAutorizacion
-        ]);
-      }
-    }
-  } else {
-    cols = ['Numero','CodDoc','Fecha','RUC Emisor','Razon Social Emisor','Nro.Secuencial','TipoId.','Id.Comprador','Razon Social Comprador','Formas de Pago','Descuento','Total Sin Impuestos','Base IVA 0%','Base IVA 5%','Base IVA 8%','Base IVA 12%','Base IVA 13%','Base IVA 14%','Base IVA 15%','No Objeto IVA','Exento IVA','Desc. Adicional','Devol. IVA','Monto IVA','Base ICE','Monto ICE','Base IRBPNR','Monto IRBPNR','Propina','Ret. IVA Pres.','Ret. Renta Pres.','Monto Total','Guia de Remision','Primeros 3 Articulos','Nro de Autorizacion'];
-    rows = dataset.map((d,i) => [
-      i+1, d.codDoc, d.fechaEmision, d.ruc, d.razonSocial, d.secFmt,
-      d.tipoIdComprador, d.idComprador, d.rsComprador, d.formaPago,
-      d.descuento, d.totalSinImpuestos,
-      d.base0, d.base5, d.base8, d.base12, d.base13, d.base14, d.base15,
-      d.noObjeto, d.exento, d.descAdicional, d.devolIVA, d.montoIVA,
-      d.baseICE, d.montoICE, d.baseIRBPNR, d.montoIRBPNR,
-      d.propina, d.retIVApres, d.retRentapres,
-      d.importeTotal, d.guiaRemision, d.articulos, d.numAutorizacion
-    ]);
-  }
-  const csv = [cols, ...rows].map(r => r.map(c => {
-    const s = String(c == null ? '' : c).replace(/"/g, '""');
-    return /[",;\n]/.test(s) ? `"${s}"` : s;
-  }).join(';')).join('\r\n');
-  const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url; a.download = filename; a.click();
-  setTimeout(() => URL.revokeObjectURL(url), 1000);
-}
-
-window.downloadCSV = downloadCSV;
-init();
-</script>
-</body>
-</html>
+    cols = ['N','codDoc','Fecha','RUC Emisor','Razon Social Emisor','Nro.Secuencial','TipoIdSujRet','IdSujRetenido','Razon Social Sujeto Retenido','P.Fiscal','CodDocSust','Fecha D.S.','Num.Doc.Sustento','Autorizacion Doc Sust','Tipo','codigo','codigoRetencion','baseImponibl
