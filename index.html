@@ -3,38 +3,35 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="description" content="Dashboard para procesar comprobantes electrónicos XML del SRI Ecuador. 100% en el navegador, sin servidor.">
 <title>Reporte Comprobantes SRI — Mensual</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.0/dist/chart.umd.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/gridjs@5.0.2/dist/gridjs.umd.js"></script>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/gridjs@5.0.2/dist/theme/mermaid.min.css">
 <style>
-:root { color-scheme: light; --navy:#002060; --gold:#c9a227; --gray:#6b7280; --bg:#fff; --border:#e5e7eb; --soft:#f9fafb; --primary:#002060; }
+:root { color-scheme: light; --navy:#002060; --gold:#c9a227; --gray:#6b7280; --bg:#fff; --border:#e5e7eb; --soft:#f9fafb; }
 * { box-sizing: border-box; }
 body { margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #f3f4f6; color: #1a1a1a; font-size: 14px; min-height: 100vh; }
 .wrap { max-width: 1200px; margin: 0 auto; padding: 20px; }
 .brand { display: flex; align-items: center; gap: 12px; padding: 10px 20px; background: var(--navy); color: white; }
 .brand .logo { width: 32px; height: 32px; background: var(--gold); border-radius: 6px; display: grid; place-items: center; font-weight: 800; color: var(--navy); }
-.brand h1 { margin: 0; font-size: 16px; font-weight: 600; letter-spacing: 0.3px; }
+.brand h1 { margin: 0; font-size: 16px; font-weight: 600; }
 .brand .tag { margin-left: auto; font-size: 11px; opacity: 0.7; }
 h2 { margin: 16px 0 8px; font-size: 16px; color: var(--navy); font-weight: 600; }
-.sub { color: var(--gray); margin-bottom: 16px; font-size: 13px; }
-.card { background: white; border: 1px solid var(--border); border-radius: 10px; padding: 16px; margin-bottom: 16px; box-shadow: 0 1px 2px rgba(0,0,0,0.03); }
-.drop-zone { border: 2px dashed var(--border); border-radius: 10px; padding: 32px 20px; text-align: center; cursor: pointer; transition: all 0.2s; background: var(--soft); }
+.card { background: white; border: 1px solid var(--border); border-radius: 10px; padding: 16px; margin-bottom: 16px; }
+.drop-zone { border: 2px dashed var(--border); border-radius: 10px; padding: 32px 20px; text-align: center; background: var(--soft); transition: all 0.2s; }
 .drop-zone:hover, .drop-zone.dragover { border-color: var(--navy); background: #eef2f9; }
-.drop-zone .icon { font-size: 36px; margin-bottom: 8px; }
-.drop-zone h3 { margin: 0 0 6px; font-size: 16px; color: var(--navy); }
-.drop-zone p { margin: 4px 0; color: var(--gray); font-size: 13px; }
+.drop-zone .icon { font-size: 36px; margin-bottom: 8px; pointer-events: none; }
+.drop-zone h3 { margin: 0 0 6px; font-size: 16px; color: var(--navy); pointer-events: none; }
+.drop-zone p { margin: 4px 0; color: var(--gray); font-size: 13px; pointer-events: none; }
 .drop-actions { margin-top: 12px; display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
-.btn { padding: 9px 18px; background: var(--navy); color: white; border: none; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer; height: 36px; }
+.btn { padding: 9px 18px; background: var(--navy); color: white; border: none; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer; }
 .btn:hover { background: #001540; }
 .btn:disabled { background: var(--gray); cursor: not-allowed; }
 .btn-sec { background: white; color: var(--navy); border: 1px solid var(--navy); }
 .btn-sec:hover { background: var(--soft); }
 .config-row { display: grid; grid-template-columns: 1.2fr 0.8fr 0.8fr auto; gap: 10px; align-items: end; }
-.field label { display: block; font-size: 12px; color: var(--gray); margin-bottom: 4px; font-weight: 500; }
+.field label { display: block; font-size: 12px; color: var(--gray); margin-bottom: 4px; }
 .field input, .field select { width: 100%; padding: 8px 10px; border: 1px solid var(--border); border-radius: 6px; font-size: 14px; background: white; }
-.field input:focus, .field select:focus { outline: none; border-color: var(--navy); }
 .status { margin-top: 10px; padding: 9px 13px; border-radius: 6px; font-size: 13px; display: none; }
 .status.active { display: block; }
 .status.info { background: #eff6ff; color: #1e40af; }
@@ -44,34 +41,28 @@ h2 { margin: 16px 0 8px; font-size: 16px; color: var(--navy); font-weight: 600; 
 .progress-bar { height: 100%; background: var(--navy); transition: width 0.3s; }
 .kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin-bottom: 16px; }
 .kpi { background: white; border: 1px solid var(--border); border-radius: 10px; padding: 14px; }
-.kpi-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--gray); margin-bottom: 6px; font-weight: 600; }
+.kpi-label { font-size: 11px; text-transform: uppercase; color: var(--gray); margin-bottom: 6px; font-weight: 600; }
 .kpi-value { font-size: 22px; font-weight: 700; color: var(--navy); }
-.kpi-sub { font-size: 12px; color: var(--gray); margin-top: 2px; }
+.kpi-sub { font-size: 12px; color: var(--gray); }
 .charts { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
 .chart-card { background: white; border: 1px solid var(--border); border-radius: 10px; padding: 14px; }
-.chart-card h3 { margin: 0 0 8px; font-size: 12px; color: var(--gray); font-weight: 700; text-transform: uppercase; letter-spacing: 0.4px; }
+.chart-card h3 { margin: 0 0 8px; font-size: 12px; color: var(--gray); font-weight: 700; text-transform: uppercase; }
 .chart-wrap { position: relative; height: 230px; }
 .tabs { background: white; border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
 .tab-headers { display: flex; border-bottom: 1px solid var(--border); background: var(--soft); overflow-x: auto; }
-.tab-h { padding: 11px 16px; cursor: pointer; font-size: 13px; font-weight: 500; color: var(--gray); border-bottom: 2px solid transparent; white-space: nowrap; }
+.tab-h { padding: 11px 16px; cursor: pointer; font-size: 13px; color: var(--gray); border-bottom: 2px solid transparent; white-space: nowrap; }
 .tab-h.active { color: var(--navy); border-bottom-color: var(--navy); background: white; }
-.tab-h .count { background: var(--border); padding: 1px 7px; border-radius: 10px; font-size: 11px; margin-left: 6px; color: var(--gray); }
+.tab-h .count { background: var(--border); padding: 1px 7px; border-radius: 10px; font-size: 11px; margin-left: 6px; }
 .tab-h.active .count { background: var(--navy); color: white; }
 .tab-body { padding: 14px; }
 .tab-actions { display: flex; gap: 8px; margin-bottom: 12px; justify-content: flex-end; }
 .tab-actions button { padding: 6px 12px; font-size: 12px; background: white; border: 1px solid var(--border); border-radius: 6px; cursor: pointer; color: var(--navy); font-weight: 500; }
-.tab-actions button:hover { background: var(--soft); }
 .empty { text-align: center; padding: 40px 20px; color: var(--gray); }
-.empty-icon { font-size: 32px; margin-bottom: 8px; }
 .hidden { display: none !important; }
-.privacy { font-size: 12px; color: var(--gray); margin-top: 10px; text-align: center; }
-.privacy strong { color: #065f46; }
+#diagPanel { margin-bottom:14px; background:#fff7e0; border:1px solid #f0d68c; border-radius:8px; padding:8px 12px; }
+#diagPanel summary { cursor:pointer; font-weight:600; color:#7c5e0a; }
 footer { padding: 24px 20px; text-align: center; color: var(--gray); font-size: 12px; }
-footer a { color: var(--navy); text-decoration: none; }
-@media (max-width: 768px) {
-  .config-row { grid-template-columns: 1fr 1fr; }
-  .charts { grid-template-columns: 1fr; }
-}
+@media (max-width: 768px) { .config-row { grid-template-columns: 1fr 1fr; } .charts { grid-template-columns: 1fr; } }
 </style>
 </head>
 <body>
@@ -91,28 +82,24 @@ footer a { color: var(--navy); text-decoration: none; }
       <h3>Arrastra los XMLs aquí</h3>
       <p>O selecciona archivos o una carpeta completa con tus comprobantes autorizados del SRI</p>
       <div class="drop-actions">
-        <button class="btn" id="pickFiles">Seleccionar archivos XML</button>
-        <button class="btn btn-sec" id="pickFolder">Seleccionar carpeta</button>
+        <button type="button" class="btn" id="pickFiles">Seleccionar archivos XML</button>
+        <button type="button" class="btn btn-sec" id="pickFolder">Seleccionar carpeta</button>
       </div>
-      <input type="file" id="fileInput" multiple accept=".xml" class="hidden">
-      <input type="file" id="folderInput" webkitdirectory directory multiple class="hidden">
     </div>
-    <p class="privacy">🔒 <strong>Privacidad total</strong>: los XMLs nunca salen de tu navegador. Todo el procesamiento es local.</p>
+    <input type="file" id="fileInput" multiple accept=".xml" class="hidden">
+    <input type="file" id="folderInput" webkitdirectory multiple class="hidden">
+    <p style="font-size:12px; color:var(--gray); margin-top:10px; text-align:center;">🔒 <strong style="color:#065f46;">Privacidad total</strong>: los XMLs nunca salen de tu navegador.</p>
   </div>
 
   <div class="card">
     <h2>2. Filtrar y procesar</h2>
     <div class="config-row">
       <div class="field">
-        <label>RUC del cliente (opcional · filtra solo tus comprobantes)</label>
+        <label>RUC del cliente (13 dígitos)</label>
         <input id="ruc" placeholder="ej. 0913897716001" maxlength="13">
       </div>
-      <div class="field">
-        <label>Año</label>
-        <select id="year"><option value="0">Todos</option></select>
-      </div>
-      <div class="field">
-        <label>Mes</label>
+      <div class="field"><label>Año</label><select id="year"><option value="0">Todos</option></select></div>
+      <div class="field"><label>Mes</label>
         <select id="month">
           <option value="0">Todos</option>
           <option value="1">Enero</option><option value="2">Febrero</option><option value="3">Marzo</option>
@@ -121,77 +108,50 @@ footer a { color: var(--navy); text-decoration: none; }
           <option value="10">Octubre</option><option value="11">Noviembre</option><option value="12">Diciembre</option>
         </select>
       </div>
-      <button class="btn" id="runBtn" disabled>Procesar</button>
+      <button type="button" class="btn" id="runBtn" disabled>Procesar</button>
     </div>
     <div class="status" id="status"></div>
     <div class="progress hidden" id="progressWrap"><div class="progress-bar" id="progressBar" style="width:0%"></div></div>
     <p id="fileCount" style="margin: 10px 0 0; color: var(--gray); font-size: 12px;"></p>
   </div>
 
-  <div id="results" class="hidden">
+  <details id="diagPanel" class="hidden">
+    <summary>🔍 Diagnóstico de procesamiento (clic para expandir)</summary>
+    <div id="diagBody" style="margin-top:10px; font-size:12px;"></div>
+  </details>
 
+  <div id="results" class="hidden">
     <h2>Resumen del periodo</h2>
     <div class="kpis" id="kpis"></div>
-
     <h2>Visualizaciones</h2>
     <div class="charts">
-      <div class="chart-card">
-        <h3>Distribución por tipo de documento</h3>
-        <div class="chart-wrap"><canvas id="chDocs"></canvas></div>
-      </div>
-      <div class="chart-card">
-        <h3>Bases IVA — Compras</h3>
-        <div class="chart-wrap"><canvas id="chIva"></canvas></div>
-      </div>
-      <div class="chart-card">
-        <h3>Bases IVA — Ventas</h3>
-        <div class="chart-wrap"><canvas id="chIvaV"></canvas></div>
-      </div>
-      <div class="chart-card">
-        <h3>Importe diario del periodo</h3>
-        <div class="chart-wrap"><canvas id="chTrend"></canvas></div>
-      </div>
-      <div class="chart-card">
-        <h3>Top 10 proveedores (compras)</h3>
-        <div class="chart-wrap"><canvas id="chProv"></canvas></div>
-      </div>
+      <div class="chart-card"><h3>Distribución por tipo de documento</h3><div class="chart-wrap"><canvas id="chDocs"></canvas></div></div>
+      <div class="chart-card"><h3>Bases IVA — Compras</h3><div class="chart-wrap"><canvas id="chIva"></canvas></div></div>
+      <div class="chart-card"><h3>Bases IVA — Ventas</h3><div class="chart-wrap"><canvas id="chIvaV"></canvas></div></div>
+      <div class="chart-card"><h3>Importe diario del periodo</h3><div class="chart-wrap"><canvas id="chTrend"></canvas></div></div>
+      <div class="chart-card"><h3>Top 10 proveedores (compras)</h3><div class="chart-wrap"><canvas id="chProv"></canvas></div></div>
     </div>
-
     <h2>Detalle por categoría</h2>
     <div class="tabs">
       <div class="tab-headers" id="tabHeaders"></div>
       <div class="tab-body" id="tabBody"></div>
     </div>
-
   </div>
 
 </div>
 
-<footer>
-  Dashboard SRI Ecuador · Procesamiento 100% en el navegador · Hosted on GitHub Pages
-</footer>
+<footer>Dashboard SRI Ecuador · Procesamiento 100% en el navegador · Hosted on GitHub Pages</footer>
 
 <script>
-// ============ STATE ============
 const STORE_KEY = 'sri_reporte_cfg_v1';
-let FILES_QUEUE = []; // {name, content}
+let FILES_QUEUE = [];
 let DATA = { factura:[], notaCredito:[], notaDebito:[], comprobanteRetencion:[], liquidacionCompra:[] };
+let DIAG = { total:0, ok:0, parseFails:[], unknownDocType:[], filteredByDate:[], filteredByRuc:[], errors:[] };
 let CHARTS = {};
 let CURRENT_TAB = 'resumen';
-const TAB_LABELS = {
-  resumen: 'Resumen',
-  compras: 'Facturas Compras',
-  ventas: 'Facturas Ventas',
-  nc: 'N. Crédito',
-  nd: 'N. Débito',
-  retRec: 'Retenciones Recibidas',
-  retEmit: 'Retenciones Emitidas',
-  liq: 'Liq. Compras'
-};
+const TAB_LABELS = { resumen:'Resumen', compras:'Facturas Compras', ventas:'Facturas Ventas', nc:'N. Crédito', nd:'N. Débito', retRec:'Retenciones Recibidas', retEmit:'Retenciones Emitidas', liq:'Liq. Compras' };
 
-// ============ INIT ============
 function init() {
-  // Year selector
   const yearSel = document.getElementById('year');
   const now = new Date().getFullYear();
   for (let y = now; y >= now - 5; y--) {
@@ -199,7 +159,6 @@ function init() {
     opt.value = y; opt.textContent = y;
     yearSel.appendChild(opt);
   }
-  // Restore config
   try {
     const cfg = JSON.parse(localStorage.getItem(STORE_KEY) || '{}');
     if (cfg.ruc) document.getElementById('ruc').value = cfg.ruc;
@@ -207,74 +166,83 @@ function init() {
     if (cfg.month) document.getElementById('month').value = cfg.month;
   } catch(e) {}
 
-  // File pickers
-  document.getElementById('pickFiles').addEventListener('click', () => document.getElementById('fileInput').click());
-  document.getElementById('pickFolder').addEventListener('click', () => document.getElementById('folderInput').click());
-  document.getElementById('fileInput').addEventListener('change', e => handleFiles(e.target.files));
-  document.getElementById('folderInput').addEventListener('change', e => handleFiles(e.target.files));
+  const fileInput = document.getElementById('fileInput');
+  const folderInput = document.getElementById('folderInput');
+  document.getElementById('pickFiles').addEventListener('click', e => { e.stopPropagation(); fileInput.click(); });
+  document.getElementById('pickFolder').addEventListener('click', e => { e.stopPropagation(); folderInput.click(); });
+  fileInput.addEventListener('change', e => handleFiles(e.target.files));
+  folderInput.addEventListener('change', e => handleFiles(e.target.files));
 
-  // Drag-drop
   const dz = document.getElementById('dropZone');
-  ['dragenter', 'dragover'].forEach(ev => dz.addEventListener(ev, e => { e.preventDefault(); dz.classList.add('dragover'); }));
-  ['dragleave', 'drop'].forEach(ev => dz.addEventListener(ev, e => { e.preventDefault(); dz.classList.remove('dragover'); }));
+  dz.addEventListener('click', e => {
+    if (e.target.closest('button')) return;
+    fileInput.click();
+  });
+  ['dragenter','dragover'].forEach(ev => dz.addEventListener(ev, e => {
+    e.preventDefault(); e.stopPropagation();
+    dz.classList.add('dragover');
+  }));
+  dz.addEventListener('dragleave', e => {
+    e.preventDefault(); e.stopPropagation();
+    dz.classList.remove('dragover');
+  });
   dz.addEventListener('drop', async e => {
+    e.preventDefault(); e.stopPropagation();
+    dz.classList.remove('dragover');
     const items = e.dataTransfer.items;
-    if (items && items[0] && items[0].webkitGetAsEntry) {
+    if (items && items.length && items[0].webkitGetAsEntry) {
       const allFiles = [];
-      for (const item of items) {
-        const entry = item.webkitGetAsEntry();
-        if (entry) await traverseEntry(entry, allFiles);
+      const entries = [];
+      for (let i = 0; i < items.length; i++) {
+        const entry = items[i].webkitGetAsEntry();
+        if (entry) entries.push(entry);
       }
+      for (const entry of entries) await traverseEntry(entry, allFiles);
       handleFiles(allFiles);
-    } else {
+    } else if (e.dataTransfer.files && e.dataTransfer.files.length) {
       handleFiles(e.dataTransfer.files);
     }
   });
-
   document.getElementById('runBtn').addEventListener('click', run);
 }
 
 async function traverseEntry(entry, files) {
   if (entry.isFile) {
     if (entry.name.toLowerCase().endsWith('.xml')) {
-      await new Promise(res => entry.file(f => { files.push(f); res(); }));
+      await new Promise(res => entry.file(f => { files.push(f); res(); }, () => res()));
     }
   } else if (entry.isDirectory) {
     const reader = entry.createReader();
-    const entries = await new Promise(res => reader.readEntries(res));
-    for (const e of entries) await traverseEntry(e, files);
+    let allEntries = [];
+    let batch;
+    do {
+      batch = await new Promise(res => reader.readEntries(res, () => res([])));
+      allEntries = allEntries.concat(batch);
+    } while (batch.length > 0);
+    for (const e of allEntries) await traverseEntry(e, files);
   }
 }
 
 async function handleFiles(fileList) {
-  const files = Array.from(fileList).filter(f => f.name.toLowerCase().endsWith('.xml'));
-  if (!files.length) {
-    setStatus('No se detectaron archivos .xml. Asegúrate de subir comprobantes autorizados del SRI.', 'error');
-    return;
-  }
+  const files = Array.from(fileList).filter(f => f.name && f.name.toLowerCase().endsWith('.xml'));
+  if (!files.length) { setStatus('No se detectaron archivos .xml.', 'error'); return; }
   setStatus(`Leyendo ${files.length} archivos...`, 'info');
   FILES_QUEUE = [];
   for (const f of files) {
-    try {
-      const content = await f.text();
-      FILES_QUEUE.push({ name: f.name, content });
-    } catch(e) {}
+    try { FILES_QUEUE.push({ name: f.name, content: await f.text() }); } catch(e) {}
   }
-  document.getElementById('fileCount').textContent = `${FILES_QUEUE.length} XMLs en cola, listos para procesar.`;
+  document.getElementById('fileCount').textContent = `${FILES_QUEUE.length} XMLs cargados.`;
   document.getElementById('runBtn').disabled = false;
-  setStatus(`${FILES_QUEUE.length} archivos cargados. Ajusta filtros y click "Procesar".`, 'ok');
+  setStatus(`${FILES_QUEUE.length} archivos listos. Click "Procesar".`, 'ok');
 }
 
 function saveCfg() {
-  const cfg = {
+  localStorage.setItem(STORE_KEY, JSON.stringify({
     ruc: document.getElementById('ruc').value.trim(),
     year: document.getElementById('year').value,
     month: document.getElementById('month').value,
-  };
-  localStorage.setItem(STORE_KEY, JSON.stringify(cfg));
+  }));
 }
-
-// ============ STATUS / PROGRESS ============
 function setStatus(msg, kind) {
   const s = document.getElementById('status');
   s.className = 'status active ' + (kind || 'info');
@@ -282,57 +250,84 @@ function setStatus(msg, kind) {
 }
 function setProgress(pct) {
   const w = document.getElementById('progressWrap');
-  const b = document.getElementById('progressBar');
   if (pct == null) { w.classList.add('hidden'); return; }
   w.classList.remove('hidden');
-  b.style.width = pct + '%';
+  document.getElementById('progressBar').style.width = pct + '%';
 }
 
-// ============ MAIN RUN ============
 async function run() {
   saveCfg();
   const ruc = document.getElementById('ruc').value.trim();
   const year = parseInt(document.getElementById('year').value, 10);
   const month = parseInt(document.getElementById('month').value, 10);
-
   if (!FILES_QUEUE.length) { setStatus('Sube XMLs primero.', 'error'); return; }
 
   const btn = document.getElementById('runBtn');
   btn.disabled = true; btn.textContent = 'Procesando...';
   document.getElementById('results').classList.add('hidden');
+  document.getElementById('diagPanel').classList.add('hidden');
   DATA = { factura:[], notaCredito:[], notaDebito:[], comprobanteRetencion:[], liquidacionCompra:[] };
+  DIAG = { total: FILES_QUEUE.length, ok:0, parseFails:[], unknownDocType:[], filteredByDate:[], filteredByRuc:[], errors:[] };
 
-  let done = 0, errors = 0, kept = 0;
+  let done = 0, errors = 0;
   setProgress(5);
   for (const f of FILES_QUEUE) {
     try {
       const parsed = parseSRI(f.content, f.name);
       if (parsed && passesFilter(parsed, ruc, year, month)) {
         DATA[parsed.docType].push(parsed);
-        kept++;
+        DIAG.ok++;
       }
-    } catch(e) { errors++; }
+    } catch(e) { errors++; DIAG.errors.push({fileName: f.name, error: String(e)}); }
     done++;
     if (done % 10 === 0 || done === FILES_QUEUE.length) {
       setProgress(5 + Math.round((done / FILES_QUEUE.length) * 90));
-      setStatus(`Procesando ${done}/${FILES_QUEUE.length}... (${kept} dentro del filtro, ${errors} errores)`, 'info');
+      setStatus(`Procesando ${done}/${FILES_QUEUE.length}... (${DIAG.ok} en filtro, ${errors} errores)`, 'info');
       await new Promise(r => setTimeout(r, 0));
     }
   }
-
   setProgress(100);
-  if (kept === 0) {
-    setStatus(`Ninguno de los ${FILES_QUEUE.length} XMLs corresponde al RUC/periodo indicado. Revisa filtros.`, 'error');
+  renderDiag();
+  document.getElementById('diagPanel').classList.remove('hidden');
+  if (DIAG.ok === 0) {
+    setStatus(`Ninguno de ${FILES_QUEUE.length} XMLs corresponde al filtro. Revisa diagnóstico.`, 'error');
   } else {
     render();
-    setStatus(`✓ ${kept} comprobantes del periodo procesados. ${errors} errores de parseo.`, 'ok');
+    setStatus(`✓ ${DIAG.ok} de ${FILES_QUEUE.length} comprobantes procesados.`, 'ok');
     document.getElementById('results').classList.remove('hidden');
   }
   btn.disabled = false; btn.textContent = 'Procesar';
   setTimeout(() => setProgress(null), 1500);
 }
 
-// ============ XML PARSER ============
+function txt(node, tag) {
+  if (!node) return '';
+  let el = null;
+  if (node.getElementsByTagNameNS) {
+    const els = node.getElementsByTagNameNS('*', tag);
+    if (els && els.length) el = els[0];
+  }
+  if (!el && node.getElementsByTagName) {
+    const els = node.getElementsByTagName(tag);
+    if (els && els.length) el = els[0];
+  }
+  return el && el.textContent ? el.textContent.trim() : '';
+}
+function findAll(node, tag) {
+  if (!node) return [];
+  if (node.getElementsByTagNameNS) {
+    const els = node.getElementsByTagNameNS('*', tag);
+    if (els && els.length) return Array.from(els);
+  }
+  if (node.getElementsByTagName) {
+    const els = node.getElementsByTagName(tag);
+    if (els && els.length) return Array.from(els);
+  }
+  return [];
+}
+function num(node, tag) { const v = parseFloat(txt(node, tag)); return isNaN(v) ? 0 : v; }
+function numSafe(node, tag) { const s = txt(node, tag); if (!s) return 0; const v = parseFloat(s); return isNaN(v) ? 0 : v; }
+
 function parseSRI(xmlText, fileName) {
   if (!xmlText) return null;
   try {
@@ -350,9 +345,8 @@ function parseSRI(xmlText, fileName) {
         let compText = compNode.textContent
           .replace(/<ds:Signature[\s\S]*?<\/ds:Signature>/g, '')
           .replace(/<ds:Signature[^/>]*\/>/g, '');
-        const innerDoc = parser.parseFromString(compText, 'text/xml');
-        inner = innerDoc.documentElement;
-        if (inner.nodeName === 'parsererror') {
+        inner = parser.parseFromString(compText, 'text/xml').documentElement;
+        if (inner && inner.getElementsByTagName && inner.getElementsByTagName('parsererror').length) {
           compText = compText.replace(/<ds:Signature[\s\S]*$/, '');
           if (compText.indexOf('</factura>') === -1 && compText.indexOf('<factura') !== -1) compText += '</factura>';
           inner = parser.parseFromString(compText, 'text/xml').documentElement;
@@ -362,14 +356,11 @@ function parseSRI(xmlText, fileName) {
       inner = doc.documentElement;
     }
     if (!inner || inner.nodeName === 'parsererror' || (inner.getElementsByTagName && inner.getElementsByTagName('parsererror').length)) {
-      console.warn('[SRI] Parse fail:', fileName);
+      DIAG.parseFails.push(fileName);
       return null;
     }
     const docType = inner.localName || inner.nodeName;
-    if (!DATA[docType]) {
-      console.warn('[SRI] Unknown docType:', docType, 'in', fileName);
-      return null;
-    }
+    if (!DATA[docType]) { DIAG.unknownDocType.push({fileName, docType}); return null; }
 
     const result = {
       docType, fileName,
@@ -396,10 +387,9 @@ function parseSRI(xmlText, fileName) {
       base0:0, base5:0, base8:0, base12:0, base13:0, base14:0, base15:0,
       noObjeto:0, exento:0, devolIVA:0, montoIVA:0,
       baseICE:0, montoICE:0, baseIRBPNR:0, montoIRBPNR:0,
-      formaPago: '', articulos: '', retenciones: []
+      formaPago:'', articulos:'', retenciones:[]
     };
-    result.secFmt = `${result.estab}-${result.ptoEmi}-${result.secuencial}`;
-
+    result.secFmt = result.estab + '-' + result.ptoEmi + '-' + result.secuencial;
     const pagos = findAll(inner, 'formaPago').map(p => (p.textContent || '').trim()).filter(Boolean);
     result.formaPago = Array.from(new Set(pagos)).join(', ');
 
@@ -407,10 +397,8 @@ function parseSRI(xmlText, fileName) {
     const tot = totList && totList.length ? totList[0] : null;
     const impuestos = tot ? findAll(tot, 'totalImpuesto') : findAll(inner, 'totalImpuesto');
     for (const ti of impuestos) {
-      const cod = txt(ti, 'codigo');
-      const cp = txt(ti, 'codigoPorcentaje');
-      const base = num(ti, 'baseImponible');
-      const valor = num(ti, 'valor');
+      const cod = txt(ti, 'codigo'), cp = txt(ti, 'codigoPorcentaje');
+      const base = num(ti, 'baseImponible'), valor = num(ti, 'valor');
       if (cod === '2') {
         if (cp === '0') result.base0 += base;
         else if (cp === '2') { result.base12 += base; result.montoIVA += valor; }
@@ -424,7 +412,6 @@ function parseSRI(xmlText, fileName) {
       } else if (cod === '3') { result.baseICE += base; result.montoICE += valor; }
       else if (cod === '5') { result.baseIRBPNR += base; result.montoIRBPNR += valor; }
     }
-
     const descs = findAll(inner, 'descripcion').slice(0, 3).map(d => (d.textContent || '').trim());
     result.articulos = descs.filter(Boolean).join(' | ');
 
@@ -437,11 +424,8 @@ function parseSRI(xmlText, fileName) {
       for (const r of rets) {
         result.retenciones.push({
           periodoFiscal: result.periodoFiscal,
-          tipoIdSuj: result.tipoIdSujRet,
-          idSuj: result.idSujRetenido,
-          rsSuj: result.rsSujRetenido,
-          codigo: txt(r, 'codigo'),
-          codigoRet: txt(r, 'codigoRetencion'),
+          tipoIdSuj: result.tipoIdSujRet, idSuj: result.idSujRetenido, rsSuj: result.rsSujRetenido,
+          codigo: txt(r, 'codigo'), codigoRet: txt(r, 'codigoRetencion'),
           baseImponible: num(r, 'baseImponible'),
           porcentaje: num(r, 'porcentajeRetener'),
           valorRetenido: num(r, 'valorRetenido'),
@@ -453,83 +437,61 @@ function parseSRI(xmlText, fileName) {
           impRenta: txt(r, 'imRentaSoc'),
           anioUtil: txt(r, 'anioUtilidades'),
           numCajBan: txt(r, 'numCajBan'),
-          precCajBan: txt(r, 'precCajBan'),
+          precCajBan: txt(r, 'precCajBan')
         });
       }
     }
     return result;
-  } catch(e) { return null; }
-}
-
-function txt(node, tag) {
-  if (!node) return '';
-  let el = null;
-  if (node.getElementsByTagNameNS) {
-    const els = node.getElementsByTagNameNS('*', tag);
-    if (els && els.length) el = els[0];
-  }
-  if (!el && node.getElementsByTagName) {
-    const els = node.getElementsByTagName(tag);
-    if (els && els.length) el = els[0];
-  }
-  if (!el && node.querySelector) el = node.querySelector(tag);
-  return el && el.textContent ? el.textContent.trim() : '';
-}
-function findAll(node, tag) {
-  if (!node) return [];
-  if (node.getElementsByTagNameNS) {
-    const els = node.getElementsByTagNameNS('*', tag);
-    if (els && els.length) return Array.from(els);
-  }
-  if (node.getElementsByTagName) {
-    const els = node.getElementsByTagName(tag);
-    if (els && els.length) return Array.from(els);
-  }
-  return node.querySelectorAll ? Array.from(node.querySelectorAll(tag)) : [];
-}
-function num(node, tag) {
-  const v = parseFloat(txt(node, tag));
-  return isNaN(v) ? 0 : v;
-}
-function numSafe(node, tag) {
-  const s = txt(node, tag);
-  if (!s) return 0;
-  const v = parseFloat(s);
-  return isNaN(v) ? 0 : v;
+  } catch(e) { DIAG.errors.push({fileName, error: String(e)}); return null; }
 }
 
 function passesFilter(d, ruc, year, month) {
   if (d.fechaEmision) {
-    const m = d.fechaEmision.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+    const m = d.fechaEmision.trim().match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
     if (m) {
       const yy = parseInt(m[3], 10), mm = parseInt(m[2], 10);
-      if (year && year > 0 && yy !== year) return false;
-      if (month && month > 0 && mm !== month) return false;
+      if (year && year > 0 && yy !== year) { DIAG.filteredByDate.push({fileName: d.fileName, fechaEmision: d.fechaEmision, reason: 'year ' + yy + ' != ' + year}); return false; }
+      if (month && month > 0 && mm !== month) { DIAG.filteredByDate.push({fileName: d.fileName, fechaEmision: d.fechaEmision, reason: 'month ' + mm + ' != ' + month}); return false; }
     }
   }
   if (ruc) {
-    // SOLO RUC exacto (13 dig). Comprobantes con cédula NO entran a declaración mensual SRI.
+    // Solo RUC exacto (13 dig). Cédula NO entra a declaración mensual SRI.
     const esEmisor = d.ruc === ruc;
     const esComprador = d.idComprador === ruc;
     const esSujetoRet = d.docType === 'comprobanteRetencion' && d.idSujRetenido === ruc;
-    if (!esEmisor && !esComprador && !esSujetoRet) return false;
+    if (!esEmisor && !esComprador && !esSujetoRet) {
+      DIAG.filteredByRuc.push({fileName: d.fileName, docType: d.docType, rucEmisor: d.ruc, idComprador: d.idComprador, idSujRet: d.idSujRetenido || ''});
+      return false;
+    }
     d._role = esEmisor ? 'emitido' : 'recibido';
   } else {
-    // Sin RUC, asumir según docType
     d._role = (d.docType === 'comprobanteRetencion') ? 'emitido' : 'recibido';
   }
   return true;
 }
 
-// ============ RENDER ============
 function fmt(v) { return (v || 0).toLocaleString('es-EC', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
 function f2(v) { return (v == null || isNaN(v)) ? '0.00' : Number(v).toFixed(2); }
 function sumField(arr, field) { return arr.reduce((s, d) => s + (d[field] || 0), 0); }
 
-function render() {
-  renderKpis();
-  renderCharts();
-  renderTabs();
+function render() { renderKpis(); renderCharts(); renderTabs(); }
+
+function renderDiag() {
+  const body = document.getElementById('diagBody');
+  const compras = DATA.factura.filter(d => d._role === 'recibido').length;
+  const ventas = DATA.factura.filter(d => d._role === 'emitido').length;
+  const retRec = DATA.comprobanteRetencion.filter(d => d._role === 'recibido').length;
+  const retEmit = DATA.comprobanteRetencion.filter(d => d._role === 'emitido').length;
+  const li = (arr, label) => arr.length ? '<details style="margin-top:6px;"><summary style="cursor:pointer; color:#7c2d12;">' + label + ' (' + arr.length + ')</summary><ul style="margin:4px 0 0 16px; padding:0; font-family:monospace; font-size:11px;">' + arr.slice(0, 50).map(x => '<li>' + (typeof x === 'string' ? x : Object.entries(x).map(kv => '<b>' + kv[0] + '</b>=' + kv[1]).join(' · ')) + '</li>').join('') + (arr.length > 50 ? '<li>... y ' + (arr.length - 50) + ' más</li>' : '') + '</ul></details>' : '';
+  body.innerHTML =
+    '<div><b>Total archivos cargados:</b> ' + DIAG.total + '</div>' +
+    '<div><b>Procesados OK:</b> ' + DIAG.ok + '</div>' +
+    '<div style="margin-top:6px;"><b>Clasificación:</b> Compras=' + compras + ' · Ventas=' + ventas + ' · NC=' + DATA.notaCredito.length + ' · ND=' + DATA.notaDebito.length + ' · Ret.Rec=' + retRec + ' · Ret.Emit=' + retEmit + ' · Liq=' + DATA.liquidacionCompra.length + '</div>' +
+    li(DIAG.parseFails, '❌ Errores de parseo') +
+    li(DIAG.unknownDocType, '❓ DocType desconocido') +
+    li(DIAG.filteredByDate, '📅 Filtrados por fecha') +
+    li(DIAG.filteredByRuc, '🔢 Filtrados por RUC') +
+    li(DIAG.errors, '⚠️ Errores generales');
 }
 
 function renderKpis() {
@@ -544,87 +506,52 @@ function renderKpis() {
   const ivaNeto = totalIvaVentas - totalIvaCompras;
   const totalRetRec = retRec.reduce((s, d) => s + d.retenciones.reduce((a, r) => a + r.valorRetenido, 0), 0);
   const totalRetEmit = retEmit.reduce((s, d) => s + d.retenciones.reduce((a, r) => a + r.valorRetenido, 0), 0);
-
   const cards = [
-    { label: 'Compras', value: '$' + fmt(totalBaseCompras), sub: `${compras.length} facturas · sin imp.` },
-    { label: 'IVA Crédito Tributario', value: '$' + fmt(totalIvaCompras), sub: 'compras' },
-    { label: 'Ventas', value: '$' + fmt(totalBaseVentas), sub: `${ventas.length} facturas · sin imp.` },
-    { label: 'IVA Débito Fiscal', value: '$' + fmt(totalIvaVentas), sub: 'ventas' },
-    { label: 'IVA Neto', value: (ivaNeto >= 0 ? '$' : '-$') + fmt(Math.abs(ivaNeto)), sub: ivaNeto >= 0 ? 'a pagar' : 'a favor' },
-    { label: 'Retenciones Recibidas', value: retRec.length, sub: '$' + fmt(totalRetRec) },
-    { label: 'Retenciones Emitidas', value: retEmit.length, sub: '$' + fmt(totalRetEmit) },
-    { label: 'NC / ND', value: DATA.notaCredito.length + ' / ' + DATA.notaDebito.length, sub: '$' + fmt(sumField(DATA.notaCredito, 'importeTotal') + sumField(DATA.notaDebito, 'importeTotal')) },
+    { label:'Compras', value:'$' + fmt(totalBaseCompras), sub: compras.length + ' facturas · sin imp.' },
+    { label:'IVA Crédito Tributario', value:'$' + fmt(totalIvaCompras), sub:'compras' },
+    { label:'Ventas', value:'$' + fmt(totalBaseVentas), sub: ventas.length + ' facturas · sin imp.' },
+    { label:'IVA Débito Fiscal', value:'$' + fmt(totalIvaVentas), sub:'ventas' },
+    { label:'IVA Neto', value:(ivaNeto >= 0 ? '$' : '-$') + fmt(Math.abs(ivaNeto)), sub: ivaNeto >= 0 ? 'a pagar' : 'a favor' },
+    { label:'Retenciones Recibidas', value: retRec.length, sub:'$' + fmt(totalRetRec) },
+    { label:'Retenciones Emitidas', value: retEmit.length, sub:'$' + fmt(totalRetEmit) },
+    { label:'NC / ND', value: DATA.notaCredito.length + ' / ' + DATA.notaDebito.length, sub:'$' + fmt(sumField(DATA.notaCredito, 'importeTotal') + sumField(DATA.notaDebito, 'importeTotal')) },
   ];
-  document.getElementById('kpis').innerHTML = cards.map(c => `
-    <div class="kpi">
-      <div class="kpi-label">${c.label}</div>
-      <div class="kpi-value">${c.value}</div>
-      <div class="kpi-sub">${c.sub}</div>
-    </div>`).join('');
+  document.getElementById('kpis').innerHTML = cards.map(c => '<div class="kpi"><div class="kpi-label">' + c.label + '</div><div class="kpi-value">' + c.value + '</div><div class="kpi-sub">' + c.sub + '</div></div>').join('');
 }
 
 function renderCharts() {
   for (const k of Object.keys(CHARTS)) { try { CHARTS[k].destroy(); } catch(e){} }
   CHARTS = {};
-  const palette = ['#002060', '#c9a227', '#1e88e5', '#43a047', '#e53935', '#8e24aa', '#fb8c00', '#00897b'];
-
+  const palette = ['#002060','#c9a227','#1e88e5','#43a047','#e53935','#8e24aa','#fb8c00','#00897b'];
   const compras = DATA.factura.filter(d => d._role === 'recibido');
   const ventas = DATA.factura.filter(d => d._role === 'emitido');
   const retRec = DATA.comprobanteRetencion.filter(d => d._role === 'recibido');
   const retEmit = DATA.comprobanteRetencion.filter(d => d._role === 'emitido');
-
-  const docTypes = {
-    'Facturas Compras': compras.length,
-    'Facturas Ventas': ventas.length,
-    'N. Crédito': DATA.notaCredito.length,
-    'N. Débito': DATA.notaDebito.length,
-    'Retenciones Recibidas': retRec.length,
-    'Retenciones Emitidas': retEmit.length,
-    'Liq. Compras': DATA.liquidacionCompra.length,
-  };
+  const docTypes = { 'Facturas Compras':compras.length, 'Facturas Ventas':ventas.length, 'N. Crédito':DATA.notaCredito.length, 'N. Débito':DATA.notaDebito.length, 'Retenciones Recibidas':retRec.length, 'Retenciones Emitidas':retEmit.length, 'Liq. Compras':DATA.liquidacionCompra.length };
   const dKeys = Object.keys(docTypes).filter(k => docTypes[k] > 0);
   CHARTS.docs = new Chart(document.getElementById('chDocs'), {
-    type: 'doughnut',
-    data: { labels: dKeys, datasets: [{ data: dKeys.map(k => docTypes[k]), backgroundColor: palette }] },
-    options: { plugins: { legend: { position: 'right', labels: { boxWidth: 12, font: { size: 11 } } } }, maintainAspectRatio: false }
+    type:'doughnut',
+    data:{ labels: dKeys, datasets:[{ data: dKeys.map(k => docTypes[k]), backgroundColor: palette }] },
+    options:{ plugins:{ legend:{ position:'right', labels:{ boxWidth:12, font:{ size:11 } } } }, maintainAspectRatio:false }
   });
-
-  const ivaCompras = {
-    'IVA 0%': sumField(compras, 'base0'),
-    'IVA 5%': sumField(compras, 'base5'),
-    'IVA 8%': sumField(compras, 'base8'),
-    'IVA 12%': sumField(compras, 'base12'),
-    'IVA 15%': sumField(compras, 'base15'),
-    'Exento': sumField(compras, 'exento'),
-    'No Objeto': sumField(compras, 'noObjeto'),
-  };
+  const ivaCompras = { 'IVA 0%':sumField(compras,'base0'),'IVA 5%':sumField(compras,'base5'),'IVA 8%':sumField(compras,'base8'),'IVA 12%':sumField(compras,'base12'),'IVA 13%':sumField(compras,'base13'),'IVA 14%':sumField(compras,'base14'),'IVA 15%':sumField(compras,'base15'),'Exento':sumField(compras,'exento'),'No Objeto':sumField(compras,'noObjeto') };
   const ivaCKeys = Object.keys(ivaCompras).filter(k => ivaCompras[k] > 0);
   CHARTS.iva = new Chart(document.getElementById('chIva'), {
-    type: 'bar',
-    data: { labels: ivaCKeys, datasets: [{ label: 'Base imponible', data: ivaCKeys.map(k => ivaCompras[k]), backgroundColor: palette }] },
-    options: { plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { callback: v => '$' + v.toLocaleString('es-EC') } } }, maintainAspectRatio: false }
+    type:'bar',
+    data:{ labels: ivaCKeys, datasets:[{ label:'Base imponible', data: ivaCKeys.map(k => ivaCompras[k]), backgroundColor: palette }] },
+    options:{ plugins:{ legend:{ display:false } }, scales:{ y:{ beginAtZero:true, ticks:{ callback: v => '$' + v.toLocaleString('es-EC') } } }, maintainAspectRatio:false }
   });
-
-  const ivaVentas = {
-    'IVA 0%': sumField(ventas, 'base0'),
-    'IVA 5%': sumField(ventas, 'base5'),
-    'IVA 8%': sumField(ventas, 'base8'),
-    'IVA 12%': sumField(ventas, 'base12'),
-    'IVA 15%': sumField(ventas, 'base15'),
-    'Exento': sumField(ventas, 'exento'),
-    'No Objeto': sumField(ventas, 'noObjeto'),
-  };
+  const ivaVentas = { 'IVA 0%':sumField(ventas,'base0'),'IVA 5%':sumField(ventas,'base5'),'IVA 8%':sumField(ventas,'base8'),'IVA 12%':sumField(ventas,'base12'),'IVA 13%':sumField(ventas,'base13'),'IVA 14%':sumField(ventas,'base14'),'IVA 15%':sumField(ventas,'base15'),'Exento':sumField(ventas,'exento'),'No Objeto':sumField(ventas,'noObjeto') };
   const ivaVKeys = Object.keys(ivaVentas).filter(k => ivaVentas[k] > 0);
   CHARTS.ivaV = new Chart(document.getElementById('chIvaV'), {
-    type: 'bar',
-    data: { labels: ivaVKeys, datasets: [{ label: 'Base imponible', data: ivaVKeys.map(k => ivaVentas[k]), backgroundColor: palette }] },
-    options: { plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { callback: v => '$' + v.toLocaleString('es-EC') } } }, maintainAspectRatio: false }
+    type:'bar',
+    data:{ labels: ivaVKeys, datasets:[{ label:'Base imponible', data: ivaVKeys.map(k => ivaVentas[k]), backgroundColor: palette }] },
+    options:{ plugins:{ legend:{ display:false } }, scales:{ y:{ beginAtZero:true, ticks:{ callback: v => '$' + v.toLocaleString('es-EC') } } }, maintainAspectRatio:false }
   });
-
   const byDay = {};
   for (const d of DATA.factura) {
     if (!d.fechaEmision) continue;
-    byDay[d.fechaEmision] = byDay[d.fechaEmision] || { c: 0, v: 0 };
+    byDay[d.fechaEmision] = byDay[d.fechaEmision] || { c:0, v:0 };
     if (d._role === 'recibido') byDay[d.fechaEmision].c += d.importeTotal;
     else byDay[d.fechaEmision].v += d.importeTotal;
   }
@@ -633,14 +560,13 @@ function renderCharts() {
     return new Date(pa[2], pa[1]-1, pa[0]) - new Date(pb[2], pb[1]-1, pb[0]);
   });
   CHARTS.trend = new Chart(document.getElementById('chTrend'), {
-    type: 'line',
-    data: { labels: days, datasets: [
-      { label: 'Compras', data: days.map(d => byDay[d].c), borderColor: '#002060', backgroundColor: 'rgba(0,32,96,0.1)', tension: 0.3, fill: true },
-      { label: 'Ventas', data: days.map(d => byDay[d].v), borderColor: '#c9a227', backgroundColor: 'rgba(201,162,39,0.1)', tension: 0.3, fill: true },
+    type:'line',
+    data:{ labels: days, datasets:[
+      { label:'Compras', data: days.map(d => byDay[d].c), borderColor:'#002060', backgroundColor:'rgba(0,32,96,0.1)', tension:0.3, fill:true },
+      { label:'Ventas', data: days.map(d => byDay[d].v), borderColor:'#c9a227', backgroundColor:'rgba(201,162,39,0.1)', tension:0.3, fill:true }
     ]},
-    options: { plugins: { legend: { position: 'top', labels: { font: { size: 11 } } } }, scales: { y: { beginAtZero: true, ticks: { callback: v => '$' + v.toLocaleString('es-EC') } } }, maintainAspectRatio: false }
+    options:{ plugins:{ legend:{ position:'top', labels:{ font:{ size:11 } } } }, scales:{ y:{ beginAtZero:true, ticks:{ callback: v => '$' + v.toLocaleString('es-EC') } } }, maintainAspectRatio:false }
   });
-
   const byProv = {};
   for (const d of compras) {
     const key = d.razonSocial || d.ruc || '—';
@@ -648,9 +574,9 @@ function renderCharts() {
   }
   const provs = Object.entries(byProv).sort((a, b) => b[1] - a[1]).slice(0, 10);
   CHARTS.prov = new Chart(document.getElementById('chProv'), {
-    type: 'bar',
-    data: { labels: provs.map(p => p[0].length > 22 ? p[0].slice(0, 22) + '…' : p[0]), datasets: [{ label: 'Importe', data: provs.map(p => p[1]), backgroundColor: '#002060' }] },
-    options: { indexAxis: 'y', plugins: { legend: { display: false } }, scales: { x: { ticks: { callback: v => '$' + v.toLocaleString('es-EC') } } }, maintainAspectRatio: false }
+    type:'bar',
+    data:{ labels: provs.map(p => p[0].length > 22 ? p[0].slice(0, 22) + '…' : p[0]), datasets:[{ label:'Importe', data: provs.map(p => p[1]), backgroundColor:'#002060' }] },
+    options:{ indexAxis:'y', plugins:{ legend:{ display:false } }, scales:{ x:{ ticks:{ callback: v => '$' + v.toLocaleString('es-EC') } } }, maintainAspectRatio:false }
   });
 }
 
@@ -659,15 +585,11 @@ function renderTabs() {
   const ventas = DATA.factura.filter(d => d._role === 'emitido');
   const retRec = DATA.comprobanteRetencion.filter(d => d._role === 'recibido');
   const retEmit = DATA.comprobanteRetencion.filter(d => d._role === 'emitido');
-  const counts = {
-    resumen: '', compras: compras.length, ventas: ventas.length,
-    nc: DATA.notaCredito.length, nd: DATA.notaDebito.length,
-    retRec: retRec.length, retEmit: retEmit.length, liq: DATA.liquidacionCompra.length,
-  };
-  const headers = Object.entries(TAB_LABELS).map(([k, label]) => `
-    <div class="tab-h ${k === CURRENT_TAB ? 'active' : ''}" data-tab="${k}">
-      ${label}${counts[k] !== '' ? `<span class="count">${counts[k]}</span>` : ''}
-    </div>`).join('');
+  const counts = { resumen:'', compras:compras.length, ventas:ventas.length, nc:DATA.notaCredito.length, nd:DATA.notaDebito.length, retRec:retRec.length, retEmit:retEmit.length, liq:DATA.liquidacionCompra.length };
+  const headers = Object.entries(TAB_LABELS).map(kv => {
+    const k = kv[0], label = kv[1];
+    return '<div class="tab-h ' + (k === CURRENT_TAB ? 'active' : '') + '" data-tab="' + k + '">' + label + (counts[k] !== '' ? '<span class="count">' + counts[k] + '</span>' : '') + '</div>';
+  }).join('');
   document.getElementById('tabHeaders').innerHTML = headers;
   document.querySelectorAll('.tab-h').forEach(el => {
     el.addEventListener('click', () => { CURRENT_TAB = el.dataset.tab; renderTabs(); });
@@ -686,16 +608,11 @@ function renderTabBody(compras, ventas) {
   else if (CURRENT_TAB === 'retRec') { dataset = DATA.comprobanteRetencion.filter(d => d._role === 'recibido'); filename = 'retenciones_recibidas.csv'; }
   else if (CURRENT_TAB === 'retEmit') { dataset = DATA.comprobanteRetencion.filter(d => d._role === 'emitido'); filename = 'retenciones_emitidas.csv'; }
   else if (CURRENT_TAB === 'liq') { dataset = DATA.liquidacionCompra; filename = 'liquidaciones.csv'; }
-
   if (!dataset || !dataset.length) {
-    body.innerHTML = `<div class="empty"><div class="empty-icon">📭</div>No hay comprobantes en esta categoría.</div>`;
+    body.innerHTML = '<div class="empty"><div style="font-size:32px;">📭</div>No hay comprobantes en esta categoría.</div>';
     return;
   }
-  body.innerHTML = `
-    <div class="tab-actions">
-      <button onclick="downloadCSV('${CURRENT_TAB}','${filename}')">⬇ Descargar CSV</button>
-    </div>
-    <div id="gridHost"></div>`;
+  body.innerHTML = '<div class="tab-actions"><button onclick="downloadCSV(\'' + CURRENT_TAB + '\',\'' + filename + '\')">⬇ Descargar CSV</button></div><div id="gridHost"></div>';
   renderGrid(dataset, CURRENT_TAB);
 }
 
@@ -705,50 +622,17 @@ function renderResumen(compras, ventas) {
   const retEmit = DATA.comprobanteRetencion.filter(d => d._role === 'emitido');
   const totalRetRec = retRec.reduce((s, d) => s + d.retenciones.reduce((a, r) => a + r.valorRetenido, 0), 0);
   const totalRetEmit = retEmit.reduce((s, d) => s + d.retenciones.reduce((a, r) => a + r.valorRetenido, 0), 0);
-  return `
-    <table style="width:100%; border-collapse: collapse; font-size: 13px;">
-      <thead style="background: var(--soft);"><tr>
-        <th style="text-align:left; padding:8px; border:1px solid var(--border);">Concepto</th>
-        <th style="text-align:right; padding:8px; border:1px solid var(--border);">Nro</th>
-        <th style="text-align:right; padding:8px; border:1px solid var(--border);">Base 0%</th>
-        <th style="text-align:right; padding:8px; border:1px solid var(--border);">Base 15%</th>
-        <th style="text-align:right; padding:8px; border:1px solid var(--border);">IVA</th>
-        <th style="text-align:right; padding:8px; border:1px solid var(--border);">Importe Total</th>
-      </tr></thead>
-      <tbody>
-        ${row('Compras (Facturas recibidas)', compras.length, tot(compras,'base0'), tot(compras,'base15'), tot(compras,'montoIVA'), tot(compras,'importeTotal'))}
-        ${row('Ventas (Facturas emitidas)', ventas.length, tot(ventas,'base0'), tot(ventas,'base15'), tot(ventas,'montoIVA'), tot(ventas,'importeTotal'))}
-        ${row('Notas de Crédito', DATA.notaCredito.length, tot(DATA.notaCredito,'base0'), tot(DATA.notaCredito,'base15'), tot(DATA.notaCredito,'montoIVA'), tot(DATA.notaCredito,'importeTotal'))}
-        ${row('Notas de Débito', DATA.notaDebito.length, tot(DATA.notaDebito,'base0'), tot(DATA.notaDebito,'base15'), tot(DATA.notaDebito,'montoIVA'), tot(DATA.notaDebito,'importeTotal'))}
-        ${row('Liquidaciones de Compra', DATA.liquidacionCompra.length, tot(DATA.liquidacionCompra,'base0'), tot(DATA.liquidacionCompra,'base15'), tot(DATA.liquidacionCompra,'montoIVA'), tot(DATA.liquidacionCompra,'importeTotal'))}
-        <tr style="background:#fff7e0; font-weight:600;">
-          <td style="padding:8px; border:1px solid var(--border);">Retenciones Recibidas (total retenido al cliente)</td>
-          <td style="text-align:right; padding:8px; border:1px solid var(--border);">${retRec.length}</td>
-          <td colspan="3"></td>
-          <td style="text-align:right; padding:8px; border:1px solid var(--border);">$${fmt(totalRetRec)}</td>
-        </tr>
-        <tr style="background:#fff7e0; font-weight:600;">
-          <td style="padding:8px; border:1px solid var(--border);">Retenciones Emitidas (total retenido por el cliente)</td>
-          <td style="text-align:right; padding:8px; border:1px solid var(--border);">${retEmit.length}</td>
-          <td colspan="3"></td>
-          <td style="text-align:right; padding:8px; border:1px solid var(--border);">$${fmt(totalRetEmit)}</td>
-        </tr>
-      </tbody>
-    </table>
-    <p style="margin-top:12px; color: var(--gray); font-size:12px;">
-      <strong>IVA neto del periodo</strong> = IVA Ventas ($${tot(ventas,'montoIVA')}) − IVA Compras ($${tot(compras,'montoIVA')}) =
-      <strong style="color: var(--navy);">$${fmt(sumField(ventas,'montoIVA') - sumField(compras,'montoIVA'))}</strong>
-    </p>`;
-}
-function row(label, n, b0, b15, iva, total) {
-  return `<tr>
-    <td style="padding:8px; border:1px solid var(--border);">${label}</td>
-    <td style="text-align:right; padding:8px; border:1px solid var(--border);">${n}</td>
-    <td style="text-align:right; padding:8px; border:1px solid var(--border);">$${b0}</td>
-    <td style="text-align:right; padding:8px; border:1px solid var(--border);">$${b15}</td>
-    <td style="text-align:right; padding:8px; border:1px solid var(--border);">$${iva}</td>
-    <td style="text-align:right; padding:8px; border:1px solid var(--border);">$${total}</td>
-  </tr>`;
+  const row = (label, n, b0, b15, iva, total) => '<tr><td style="padding:8px; border:1px solid var(--border);">' + label + '</td><td style="text-align:right; padding:8px; border:1px solid var(--border);">' + n + '</td><td style="text-align:right; padding:8px; border:1px solid var(--border);">$' + b0 + '</td><td style="text-align:right; padding:8px; border:1px solid var(--border);">$' + b15 + '</td><td style="text-align:right; padding:8px; border:1px solid var(--border);">$' + iva + '</td><td style="text-align:right; padding:8px; border:1px solid var(--border);">$' + total + '</td></tr>';
+  return '<table style="width:100%; border-collapse:collapse; font-size:13px;"><thead style="background:var(--soft);"><tr><th style="text-align:left; padding:8px; border:1px solid var(--border);">Concepto</th><th style="text-align:right; padding:8px; border:1px solid var(--border);">Nro</th><th style="text-align:right; padding:8px; border:1px solid var(--border);">Base 0%</th><th style="text-align:right; padding:8px; border:1px solid var(--border);">Base 15%</th><th style="text-align:right; padding:8px; border:1px solid var(--border);">IVA</th><th style="text-align:right; padding:8px; border:1px solid var(--border);">Importe Total</th></tr></thead><tbody>' +
+    row('Compras (Facturas recibidas)', compras.length, tot(compras,'base0'), tot(compras,'base15'), tot(compras,'montoIVA'), tot(compras,'importeTotal')) +
+    row('Ventas (Facturas emitidas)', ventas.length, tot(ventas,'base0'), tot(ventas,'base15'), tot(ventas,'montoIVA'), tot(ventas,'importeTotal')) +
+    row('Notas de Crédito', DATA.notaCredito.length, tot(DATA.notaCredito,'base0'), tot(DATA.notaCredito,'base15'), tot(DATA.notaCredito,'montoIVA'), tot(DATA.notaCredito,'importeTotal')) +
+    row('Notas de Débito', DATA.notaDebito.length, tot(DATA.notaDebito,'base0'), tot(DATA.notaDebito,'base15'), tot(DATA.notaDebito,'montoIVA'), tot(DATA.notaDebito,'importeTotal')) +
+    row('Liquidaciones de Compra', DATA.liquidacionCompra.length, tot(DATA.liquidacionCompra,'base0'), tot(DATA.liquidacionCompra,'base15'), tot(DATA.liquidacionCompra,'montoIVA'), tot(DATA.liquidacionCompra,'importeTotal')) +
+    '<tr style="background:#fff7e0; font-weight:600;"><td style="padding:8px; border:1px solid var(--border);">Retenciones Recibidas</td><td style="text-align:right; padding:8px; border:1px solid var(--border);">' + retRec.length + '</td><td colspan="3"></td><td style="text-align:right; padding:8px; border:1px solid var(--border);">$' + fmt(totalRetRec) + '</td></tr>' +
+    '<tr style="background:#fff7e0; font-weight:600;"><td style="padding:8px; border:1px solid var(--border);">Retenciones Emitidas</td><td style="text-align:right; padding:8px; border:1px solid var(--border);">' + retEmit.length + '</td><td colspan="3"></td><td style="text-align:right; padding:8px; border:1px solid var(--border);">$' + fmt(totalRetEmit) + '</td></tr>' +
+    '</tbody></table>' +
+    '<p style="margin-top:12px; color:var(--gray); font-size:12px;"><strong>IVA neto</strong> = IVA Ventas ($' + tot(ventas,'montoIVA') + ') − IVA Compras ($' + tot(compras,'montoIVA') + ') = <strong style="color:var(--navy);">$' + fmt(sumField(ventas,'montoIVA') - sumField(compras,'montoIVA')) + '</strong></p>';
 }
 
 function renderGrid(dataset, tabKey) {
@@ -759,41 +643,17 @@ function renderGrid(dataset, tabKey) {
     let n = 1;
     for (const d of dataset) {
       for (const r of d.retenciones) {
-        rows.push([
-          n++, d.codDoc, d.fechaEmision, d.ruc, d.razonSocial, d.secFmt,
-          r.tipoIdSuj, r.idSuj, r.rsSuj, r.periodoFiscal,
-          r.codDocSust, r.fechaDocSust, r.numDocSust, r.autDocSust,
-          tabKey === 'retRec' ? 'Recibida' : 'Emitida',
-          r.codigo, r.codigoRet,
-          (r.baseImponible||0).toFixed(2), (r.porcentaje||0).toFixed(2), (r.valorRetenido||0).toFixed(2),
-          r.fpDividendo, r.impRenta, r.anioUtil, r.numCajBan, r.precCajBan, d.numAutorizacion
-        ]);
+        rows.push([n++, d.codDoc, d.fechaEmision, d.ruc, d.razonSocial, d.secFmt, r.tipoIdSuj, r.idSuj, r.rsSuj, r.periodoFiscal, r.codDocSust, r.fechaDocSust, r.numDocSust, r.autDocSust, tabKey === 'retRec' ? 'Recibida' : 'Emitida', r.codigo, r.codigoRet, (r.baseImponible||0).toFixed(2), (r.porcentaje||0).toFixed(2), (r.valorRetenido||0).toFixed(2), r.fpDividendo, r.impRenta, r.anioUtil, r.numCajBan, r.precCajBan, d.numAutorizacion]);
       }
     }
   } else if (tabKey === 'compras' || tabKey === 'ventas') {
     cols = ['Numero','CodDoc','Fecha','RUC Emisor','Razón Social Emisor','Nro.Secuencial','TipoId.','Id.Comprador','Razón Social Comprador','Formas de Pago','Descuento','Total Sin Imp.','B.IVA 0%','B.IVA 5%','B.IVA 8%','B.IVA 12%','B.IVA 13%','B.IVA 14%','B.IVA 15%','No Obj. IVA','Exento IVA','Desc. Adic.','Devol. IVA','Monto IVA','Base ICE','Monto ICE','Base IRBPNR','Monto IRBPNR','Propina','Ret. IVA Pres.','Ret. Renta Pres.','Monto Total','Guia Remisión','Primeros 3 Artículos','Nro de Autorización'];
-    rows = dataset.map((d, i) => [
-      i+1, d.codDoc, d.fechaEmision, d.ruc, d.razonSocial, d.secFmt,
-      d.tipoIdComprador, d.idComprador, d.rsComprador, d.formaPago,
-      f2(d.descuento), f2(d.totalSinImpuestos),
-      f2(d.base0), f2(d.base5), f2(d.base8), f2(d.base12), f2(d.base13), f2(d.base14), f2(d.base15),
-      f2(d.noObjeto), f2(d.exento), f2(d.descAdicional), f2(d.devolIVA), f2(d.montoIVA),
-      f2(d.baseICE), f2(d.montoICE), f2(d.baseIRBPNR), f2(d.montoIRBPNR),
-      f2(d.propina), f2(d.retIVApres), f2(d.retRentapres),
-      f2(d.importeTotal), d.guiaRemision, d.articulos, d.numAutorizacion
-    ]);
+    rows = dataset.map((d, i) => [i+1, d.codDoc, d.fechaEmision, d.ruc, d.razonSocial, d.secFmt, d.tipoIdComprador, d.idComprador, d.rsComprador, d.formaPago, f2(d.descuento), f2(d.totalSinImpuestos), f2(d.base0), f2(d.base5), f2(d.base8), f2(d.base12), f2(d.base13), f2(d.base14), f2(d.base15), f2(d.noObjeto), f2(d.exento), f2(d.descAdicional), f2(d.devolIVA), f2(d.montoIVA), f2(d.baseICE), f2(d.montoICE), f2(d.baseIRBPNR), f2(d.montoIRBPNR), f2(d.propina), f2(d.retIVApres), f2(d.retRentapres), f2(d.importeTotal), d.guiaRemision, d.articulos, d.numAutorizacion]);
   } else {
     cols = ['N°','Fecha','Tipo','RUC/CI','Razón Social','Secuencial','Total Sin Imp.','Base 0%','Base 15%','IVA','Importe Total'];
-    rows = dataset.map((d, i) => [
-      i+1, d.fechaEmision, d.codDoc, d.ruc, d.razonSocial, d.secFmt,
-      f2(d.totalSinImpuestos), f2(d.base0), f2(d.base15), f2(d.montoIVA), f2(d.importeTotal)
-    ]);
+    rows = dataset.map((d, i) => [i+1, d.fechaEmision, d.codDoc, d.ruc, d.razonSocial, d.secFmt, f2(d.totalSinImpuestos), f2(d.base0), f2(d.base15), f2(d.montoIVA), f2(d.importeTotal)]);
   }
-  new gridjs.Grid({
-    columns: cols, data: rows, sort: true, search: true,
-    pagination: { limit: 25 }, resizable: true,
-    style: { table: { 'white-space': 'nowrap' } }
-  }).render(document.getElementById('gridHost'));
+  new gridjs.Grid({ columns: cols, data: rows, sort: true, search: true, pagination:{ limit:25 }, resizable: true, style:{ table:{ 'white-space':'nowrap' } } }).render(document.getElementById('gridHost'));
 }
 
 function downloadCSV(tab, filename) {
@@ -805,6 +665,32 @@ function downloadCSV(tab, filename) {
   else if (tab === 'retRec') dataset = DATA.comprobanteRetencion.filter(d => d._role === 'recibido');
   else if (tab === 'retEmit') dataset = DATA.comprobanteRetencion.filter(d => d._role === 'emitido');
   else if (tab === 'liq') dataset = DATA.liquidacionCompra;
-
   if (tab === 'retRec' || tab === 'retEmit') {
-    cols = ['N','codDoc','Fecha','RUC Emisor','Razon Social Emisor','Nro.Secuencial','TipoIdSujRet','IdSujRetenido','Razon Social Sujeto Retenido','P.Fiscal','CodDocSust','Fecha 
+    cols = ['N','codDoc','Fecha','RUC Emisor','Razon Social Emisor','Nro.Secuencial','TipoIdSujRet','IdSujRetenido','Razon Social Sujeto Retenido','P.Fiscal','CodDocSust','Fecha D.S.','Num.Doc.Sustento','Autorizacion Doc Sust','Tipo','codigo','codigoRetencion','baseImponible','porcentajeRetener','valorRetenido','F.P.Dividendo','ImpRenta','Anio Utilidad','Num.Caj.Banano','Prec.Caj.Banano','Nro Autorizacion'];
+    rows = [];
+    let n = 1;
+    for (const d of dataset) {
+      for (const r of d.retenciones) {
+        rows.push([n++, d.codDoc, d.fechaEmision, d.ruc, d.razonSocial, d.secFmt, r.tipoIdSuj, r.idSuj, r.rsSuj, r.periodoFiscal, r.codDocSust, r.fechaDocSust, r.numDocSust, r.autDocSust, tab === 'retRec' ? 'Recibida' : 'Emitida', r.codigo, r.codigoRet, r.baseImponible, r.porcentaje, r.valorRetenido, r.fpDividendo, r.impRenta, r.anioUtil, r.numCajBan, r.precCajBan, d.numAutorizacion]);
+      }
+    }
+  } else {
+    cols = ['Numero','CodDoc','Fecha','RUC Emisor','Razon Social Emisor','Nro.Secuencial','TipoId.','Id.Comprador','Razon Social Comprador','Formas de Pago','Descuento','Total Sin Impuestos','Base IVA 0%','Base IVA 5%','Base IVA 8%','Base IVA 12%','Base IVA 13%','Base IVA 14%','Base IVA 15%','No Objeto IVA','Exento IVA','Desc. Adicional','Devol. IVA','Monto IVA','Base ICE','Monto ICE','Base IRBPNR','Monto IRBPNR','Propina','Ret. IVA Pres.','Ret. Renta Pres.','Monto Total','Guia de Remision','Primeros 3 Articulos','Nro de Autorizacion'];
+    rows = dataset.map((d, i) => [i+1, d.codDoc, d.fechaEmision, d.ruc, d.razonSocial, d.secFmt, d.tipoIdComprador, d.idComprador, d.rsComprador, d.formaPago, d.descuento, d.totalSinImpuestos, d.base0, d.base5, d.base8, d.base12, d.base13, d.base14, d.base15, d.noObjeto, d.exento, d.descAdicional, d.devolIVA, d.montoIVA, d.baseICE, d.montoICE, d.baseIRBPNR, d.montoIRBPNR, d.propina, d.retIVApres, d.retRentapres, d.importeTotal, d.guiaRemision, d.articulos, d.numAutorizacion]);
+  }
+  const csv = [cols].concat(rows).map(r => r.map(c => {
+    const s = String(c == null ? '' : c).replace(/"/g, '""');
+    return /[",;\n]/.test(s) ? '"' + s + '"' : s;
+  }).join(';')).join('\r\n');
+  const blob = new Blob(['﻿' + csv], { type:'text/csv;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename; a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+window.downloadCSV = downloadCSV;
+init();
+</script>
+</body>
+</html>
