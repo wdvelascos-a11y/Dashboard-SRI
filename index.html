@@ -508,6 +508,7 @@ function passesFilter(d, ruc, year, month) {
     }
   }
   if (ruc) {
+    // SOLO RUC exacto (13 dig). Comprobantes con cédula NO entran a declaración mensual SRI.
     const esEmisor = d.ruc === ruc;
     const esComprador = d.idComprador === ruc;
     const esSujetoRet = d.docType === 'comprobanteRetencion' && d.idSujRetenido === ruc;
@@ -806,4 +807,4 @@ function downloadCSV(tab, filename) {
   else if (tab === 'liq') dataset = DATA.liquidacionCompra;
 
   if (tab === 'retRec' || tab === 'retEmit') {
-    cols = ['N','codDoc','Fecha','RUC Emisor','Razon Social Emisor','Nro.Secuencial','TipoIdSujRet','IdSujRetenido','Razon Social Sujeto Retenido','P.Fiscal','CodDocSust','Fecha D.S.','Num.Doc.Sustento','Autorizacion Doc Sust','Tipo','codigo','codigoRetencion','baseImponibl
+    cols = ['N','codDoc','Fecha','RUC Emisor','Razon Social Emisor','Nro.Secuencial','TipoIdSujRet','IdSujRetenido','Razon Social Sujeto Retenido','P.Fiscal','CodDocSust','Fecha 
