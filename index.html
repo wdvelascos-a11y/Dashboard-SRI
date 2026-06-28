@@ -393,9 +393,17 @@ function parseSRI(xmlText, fileName) {
     const pagos = findAll(inner, 'formaPago').map(p => (p.textContent || '').trim()).filter(Boolean);
     result.formaPago = Array.from(new Set(pagos)).join(', ');
 
+    // Factura: <totalConImpuestos><totalImpuesto>
+    // NC/ND/liq.compra: <impuestos><impuesto> (primer <impuestos> en doc-order)
+    let impuestos = [];
     const totList = findAll(inner, 'totalConImpuestos');
-    const tot = totList && totList.length ? totList[0] : null;
-    const impuestos = tot ? findAll(tot, 'totalImpuesto') : findAll(inner, 'totalImpuesto');
+    if (totList.length) {
+      impuestos = findAll(totList[0], 'totalImpuesto');
+    }
+    if (!impuestos.length) {
+      const impParents = findAll(inner, 'impuestos');
+      if (impParents.length) impuestos = findAll(impParents[0], 'impuesto');
+    }
     for (const ti of impuestos) {
       const cod = txt(ti, 'codigo'), cp = txt(ti, 'codigoPorcentaje');
       const base = num(ti, 'baseImponible'), valor = num(ti, 'valor');
@@ -420,25 +428,58 @@ function parseSRI(xmlText, fileName) {
       result.tipoIdSujRet = txt(inner, 'tipoIdentificacionSujetoRetenido');
       result.idSujRetenido = txt(inner, 'identificacionSujetoRetenido');
       result.rsSujRetenido = txt(inner, 'razonSocialSujetoRetenido');
-      const rets = findAll(inner, 'impuesto');
-      for (const r of rets) {
-        result.retenciones.push({
-          periodoFiscal: result.periodoFiscal,
-          tipoIdSuj: result.tipoIdSujRet, idSuj: result.idSujRetenido, rsSuj: result.rsSujRetenido,
-          codigo: txt(r, 'codigo'), codigoRet: txt(r, 'codigoRetencion'),
-          baseImponible: num(r, 'baseImponible'),
-          porcentaje: num(r, 'porcentajeRetener'),
-          valorRetenido: num(r, 'valorRetenido'),
-          codDocSust: txt(r, 'codDocSustento'),
-          numDocSust: txt(r, 'numDocSustento'),
-          fechaDocSust: txt(r, 'fechaEmisionDocSustento'),
-          autDocSust: txt(r, 'numAutDocSustento'),
-          fpDividendo: txt(r, 'fechaPagoDiv'),
-          impRenta: txt(r, 'imRentaSoc'),
-          anioUtil: txt(r, 'anioUtilidades'),
-          numCajBan: txt(r, 'numCajBan'),
-          precCajBan: txt(r, 'precCajBan')
-        });
+      // v2.0.0: <docsSustento><docSustento><retenciones><retencion>
+      const docSustentos = findAll(inner, 'docSustento');
+      if (docSustentos.length) {
+        for (const ds of docSustentos) {
+          const di = {
+            codDocSust: txt(ds, 'codDocSustento'),
+            numDocSust: txt(ds, 'numDocSustento'),
+            fechaDocSust: txt(ds, 'fechaEmisionDocSustento'),
+            autDocSust: txt(ds, 'numAutDocSustento'),
+            fpDividendo: txt(ds, 'fechaPagoDiv') || txt(ds, 'fechaPagoDividendo'),
+            impRenta: txt(ds, 'imRentaSoc') || txt(ds, 'imRentaSociedad'),
+            anioUtil: txt(ds, 'anioUtilidades'),
+            numCajBan: txt(ds, 'numCajBan'),
+            precCajBan: txt(ds, 'precCajBan')
+          };
+          const rets = findAll(ds, 'retencion');
+          for (const r of rets) {
+            result.retenciones.push({
+              periodoFiscal: result.periodoFiscal,
+              tipoIdSuj: result.tipoIdSujRet, idSuj: result.idSujRetenido, rsSuj: result.rsSujRetenido,
+              codigo: txt(r, 'codigo'), codigoRet: txt(r, 'codigoRetencion'),
+              baseImponible: num(r, 'baseImponible'),
+              porcentaje: num(r, 'porcentajeRetener'),
+              valorRetenido: num(r, 'valorRetenido'),
+              codDocSust: di.codDocSust, numDocSust: di.numDocSust, fechaDocSust: di.fechaDocSust, autDocSust: di.autDocSust,
+              fpDividendo: di.fpDividendo, impRenta: di.impRenta, anioUtil: di.anioUtil,
+              numCajBan: di.numCajBan, precCajBan: di.precCajBan
+            });
+          }
+        }
+      } else {
+        // v1.0.0: <impuestos><impuesto> directo
+        const rets = findAll(inner, 'impuesto');
+        for (const r of rets) {
+          result.retenciones.push({
+            periodoFiscal: result.periodoFiscal,
+            tipoIdSuj: result.tipoIdSujRet, idSuj: result.idSujRetenido, rsSuj: result.rsSujRetenido,
+            codigo: txt(r, 'codigo'), codigoRet: txt(r, 'codigoRetencion'),
+            baseImponible: num(r, 'baseImponible'),
+            porcentaje: num(r, 'porcentajeRetener'),
+            valorRetenido: num(r, 'valorRetenido'),
+            codDocSust: txt(r, 'codDocSustento'),
+            numDocSust: txt(r, 'numDocSustento'),
+            fechaDocSust: txt(r, 'fechaEmisionDocSustento'),
+            autDocSust: txt(r, 'numAutDocSustento'),
+            fpDividendo: txt(r, 'fechaPagoDiv'),
+            impRenta: txt(r, 'imRentaSoc'),
+            anioUtil: txt(r, 'anioUtilidades'),
+            numCajBan: txt(r, 'numCajBan'),
+            precCajBan: txt(r, 'precCajBan')
+          });
+        }
       }
     }
     return result;
