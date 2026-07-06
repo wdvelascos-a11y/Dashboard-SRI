@@ -504,7 +504,16 @@ function passesFilter(d, ruc, year, month) {
       DIAG.filteredByRuc.push({fileName: d.fileName, docType: d.docType, rucEmisor: d.ruc, idComprador: d.idComprador, idSujRet: d.idSujRetenido || ''});
       return false;
     }
-    d._role = esEmisor ? 'emitido' : 'recibido';
+    // Cuando ambos RUCs coinciden (emisor === comprador), decidir por:
+    // 1) hint del nombre de archivo (FAE = venta, FAR = compra)
+    // 2) default recibido (compra) — postura conservadora del usuario
+    if (esEmisor && esComprador) {
+      const fn = (d.fileName || '').toUpperCase();
+      if (fn.indexOf('FAE') !== -1) d._role = 'emitido';
+      else d._role = 'recibido';
+    } else {
+      d._role = esEmisor ? 'emitido' : 'recibido';
+    }
   } else {
     d._role = (d.docType === 'comprobanteRetencion') ? 'emitido' : 'recibido';
   }
